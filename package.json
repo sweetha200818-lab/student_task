@@ -1,0 +1,9 @@
+{
+  "name": "brightdesk-student-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BrightDesk student portal with a small built-in Node.js backend",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
