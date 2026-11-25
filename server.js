@@ -2,11 +2,21 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
+const mysql = require('mysql2/promise');
+
+require('dotenv').config();
 
 const root = __dirname;
 const dataDirectory = process.env.PORTAL_DATA_DIR || path.join(root, '.portal-data');
 const usersFile = path.join(dataDirectory, 'users.json');
 const port = Number(process.env.PORT || 3000);
+const databaseConfig = {
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: Number(process.env.DB_PORT || 3306),
+  user: process.env.DB_USER || '',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || ''
+};
 const sessionLifetime = 7 * 24 * 60 * 60 * 1000;
 const sessionCookie = 'brightdesk_session';
 const sessionStore = new Map();
@@ -14,17 +24,52 @@ const defaultPortalData = {
   bd_classes: [],
   bd_attendance: {},
   bd_tasks: [],
-  bd_student_names: {}
+  bd_student_names: {},
+  bd_teachers: [],
+  bd_events: []
 };
 
-fs.mkdirSync(dataDirectory, { recursive: true });
-if (!fs.existsSync(usersFile)) fs.writeFileSync(usersFile, '{}', { mode: 0o600 });
-let users = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+let database;
 
-function persistUsers() {
-  const temporaryFile = `${usersFile}.tmp`;
-  fs.writeFileSync(temporaryFile, JSON.stringify(users), { mode: 0o600 });
-  fs.renameSync(temporaryFile, usersFile);
+async function initializeDatabase() {
+  const missingSettings = ['DB_USER', 'DB_PASSWORD', 'DB_NAME']
+    .filter(name => !process.env[name]);
+  if (missingSettings.length) {
+    throw new Error(`Set ${missingSettings.join(', ')} in your .env file before starting the portal.`);
+  }
+  if (!Number.isInteger(databaseConfig.port) || databaseConfig.port < 1 || databaseConfig.port > 65535) {
+    throw new Error('DB_PORT must be a valid TCP port.');
+  }
+
+  database = mysql.createPool({
+    ...databaseConfig,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  });
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS portal_users (
+      username VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+      salt CHAR(32) NOT NULL,
+      password_hash CHAR(128) NOT NULL,
+      portal_data JSON NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB
+  `);
+
+  if (!fs.existsSync(usersFile)) return;
+  const legacyUsers = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
+  if (!isRecord(legacyUsers)) throw new Error('Legacy account data must be a JSON object.');
+  for (const [username, user] of Object.entries(legacyUsers)) {
+    if (!isRecord(user) || typeof user.salt !== 'string' || typeof user.passwordHash !== 'string' || !validPortalData(user.data)) {
+      throw new Error(`Legacy account data for "${username}" has an invalid format.`);
+    }
+    await database.execute(
+      'INSERT IGNORE INTO portal_users (username, salt, password_hash, portal_data) VALUES (?, ?, ?, ?)',
+      [username, user.salt, user.passwordHash, JSON.stringify(normalizePortalData(user.data))]
+    );
+  }
 }
 
 function sendJson(response, status, value, headers = {}) {
@@ -64,7 +109,7 @@ function getSessionToken(request) {
   return '';
 }
 
-function getSessionUser(request) {
+async function getSessionUser(request) {
   const token = getSessionToken(request);
   const session = sessionStore.get(token);
   if (!session) return null;
@@ -72,12 +117,23 @@ function getSessionUser(request) {
     sessionStore.delete(token);
     return null;
   }
-  return users[session.email] || null;
+  const [rows] = await database.execute(
+    'SELECT username, salt, password_hash, portal_data FROM portal_users WHERE username = ?',
+    [session.username]
+  );
+  const user = rows[0];
+  if (!user) return null;
+  return {
+    username: user.username,
+    salt: user.salt,
+    passwordHash: user.password_hash,
+    data: normalizePortalData(typeof user.portal_data === 'string' ? JSON.parse(user.portal_data) : user.portal_data)
+  };
 }
 
-function createSession(email) {
+function createSession(username) {
   const token = crypto.randomBytes(32).toString('base64url');
-  sessionStore.set(token, { email, expiresAt: Date.now() + sessionLifetime });
+  sessionStore.set(token, { username, expiresAt: Date.now() + sessionLifetime });
   return token;
 }
 
@@ -111,10 +167,11 @@ async function readJson(request) {
   }
 }
 
-function validEmail(value) {
+function validUsername(value) {
   return typeof value === 'string' &&
-    value.length <= 254 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    value.length >= 3 &&
+    value.length <= 64 &&
+    /^[a-zA-Z0-9._-]+$/.test(value);
 }
 
 function isRecord(value) {
@@ -126,7 +183,18 @@ function validPortalData(value) {
     Array.isArray(value.bd_classes) &&
     isRecord(value.bd_attendance) &&
     Array.isArray(value.bd_tasks) &&
-    isRecord(value.bd_student_names);
+    isRecord(value.bd_student_names) &&
+    (value.bd_teachers === undefined || Array.isArray(value.bd_teachers)) &&
+    (value.bd_events === undefined || Array.isArray(value.bd_events));
+}
+
+function normalizePortalData(value) {
+  return {
+    ...defaultPortalData,
+    ...value,
+    bd_teachers: Array.isArray(value.bd_teachers) ? value.bd_teachers : [],
+    bd_events: Array.isArray(value.bd_events) ? value.bd_events : []
+  };
 }
 
 function sendStatic(request, response, filename) {
@@ -155,45 +223,55 @@ async function handleRequest(request, response) {
   if (url.pathname === '/api/register' && request.method === 'POST') {
     if (!isSameOrigin(request)) return sendJson(response, 403, { error: 'Request origin is not allowed.' });
     const body = await readJson(request);
-    if (!isRecord(body) || !validEmail(body.email) || typeof body.password !== 'string' || body.password.length < 10 || body.password.length > 128) {
-      return sendJson(response, 400, { error: 'Enter a valid email and a password of at least 10 characters.' });
+    if (!isRecord(body) || !validUsername(body.username) || typeof body.password !== 'string' || body.password.length < 10 || body.password.length > 128) {
+      return sendJson(response, 400, { error: 'Enter a valid username and a password of at least 10 characters.' });
     }
     if (body.data !== undefined && !validPortalData(body.data)) {
       return sendJson(response, 400, { error: 'Existing portal data has an invalid format.' });
     }
-    const email = body.email.trim().toLowerCase();
-    if (users[email]) return sendJson(response, 409, { error: 'An account with this email already exists.' });
+    const username = body.username.trim();
     const { salt, hash } = hashPassword(body.password);
-    users[email] = {
-      salt,
-      passwordHash: hash,
-      data: body.data || JSON.parse(JSON.stringify(defaultPortalData))
-    };
     try {
-      persistUsers();
+      await database.execute(
+        'INSERT INTO portal_users (username, salt, password_hash, portal_data) VALUES (?, ?, ?, ?)',
+        [username, salt, hash, JSON.stringify(normalizePortalData(body.data || {}))]
+      );
     } catch (error) {
-      delete users[email];
+      if (error.code === 'ER_DUP_ENTRY') {
+        return sendJson(response, 409, { error: 'An account with this username already exists.' });
+      }
       throw error;
     }
-    const token = createSession(email);
+    const token = createSession(username);
     return sendJson(response, 201, { authenticated: true }, { 'Set-Cookie': cookieHeader(token, sessionLifetime / 1000) });
   }
 
   if (url.pathname === '/api/login' && request.method === 'POST') {
     if (!isSameOrigin(request)) return sendJson(response, 403, { error: 'Request origin is not allowed.' });
     const body = await readJson(request);
-    const email = isRecord(body) && typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
-    const user = validEmail(email) ? users[email] : null;
-    if (!user || !isRecord(body) || typeof body.password !== 'string' || !verifyPassword(body.password, user)) {
-      return sendJson(response, 401, { error: 'Invalid email or password.' });
+    const username = isRecord(body) && typeof body.username === 'string' ? body.username.trim() : '';
+    let user = null;
+    if (validUsername(username)) {
+      const [rows] = await database.execute(
+        'SELECT salt, password_hash FROM portal_users WHERE username = ?',
+        [username]
+      );
+      user = rows[0] || null;
     }
-    const token = createSession(email);
+    if (!user || !isRecord(body) || typeof body.password !== 'string' ||
+      !verifyPassword(body.password, { salt: user.salt, passwordHash: user.password_hash })) {
+      return sendJson(response, 401, { error: 'Invalid username or password.' });
+    }
+    const token = createSession(username);
     return sendJson(response, 200, { authenticated: true }, { 'Set-Cookie': cookieHeader(token, sessionLifetime / 1000) });
   }
 
   if (url.pathname === '/api/session' && request.method === 'GET') {
-    const user = getSessionUser(request);
-    return sendJson(response, 200, { authenticated: !!user });
+    const user = await getSessionUser(request);
+    return sendJson(response, 200, {
+      authenticated: !!user,
+      username: user ? user.username : ''
+    });
   }
 
   if (url.pathname === '/api/logout' && request.method === 'POST') {
@@ -203,19 +281,21 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === '/api/data' && request.method === 'GET') {
-    const user = getSessionUser(request);
+    const user = await getSessionUser(request);
     if (!user) return sendJson(response, 401, { error: 'Sign in to access your portal data.' });
     return sendJson(response, 200, user.data);
   }
 
   if (url.pathname === '/api/data' && request.method === 'PUT') {
     if (!isSameOrigin(request)) return sendJson(response, 403, { error: 'Request origin is not allowed.' });
-    const user = getSessionUser(request);
+    const user = await getSessionUser(request);
     if (!user) return sendJson(response, 401, { error: 'Sign in to save your portal data.' });
     const data = await readJson(request);
     if (!validPortalData(data)) return sendJson(response, 400, { error: 'Portal data has an invalid format.' });
-    user.data = data;
-    persistUsers();
+    await database.execute(
+      'UPDATE portal_users SET portal_data = ? WHERE username = ?',
+      [JSON.stringify(normalizePortalData(data)), user.username]
+    );
     return sendJson(response, 200, { saved: true });
   }
 
@@ -248,6 +328,11 @@ const server = http.createServer((request, response) => {
   });
 });
 
-server.listen(port, process.env.HOST || '127.0.0.1', () => {
-  console.log(`BrightDesk portal running at http://${process.env.HOST || '127.0.0.1'}:${port}`);
+initializeDatabase().then(() => {
+  server.listen(port, process.env.HOST || '127.0.0.1', () => {
+    console.log(`BrightDesk portal running at http://${process.env.HOST || '127.0.0.1'}:${port}`);
+  });
+}).catch(error => {
+  console.error('Unable to initialize the MySQL database:', error.message);
+  process.exitCode = 1;
 });

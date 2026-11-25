@@ -1,7 +1,103 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BrightDesk Student Portal</title><link rel="stylesheet" href="style.css"></head>
-<body><section id="auth-screen" class="auth-screen"><div class="auth-card"><div class="auth-brand"><div class="logo">✦</div><div><b>BrightDesk</b><small>STUDENT PORTAL</small></div></div><p class="eyebrow">YOUR STUDY SPACE</p><h1 id="auth-title">Welcome back</h1><p id="auth-description" class="auth-description">Sign in to continue to your portal.</p><form id="loginForm" class="auth-form"><label>Email<input id="loginEmail" type="email" autocomplete="email" required></label><label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Sign in</button><button id="showRegister" class="auth-switch" type="button">New here? Create an account</button></form><form id="registerForm" class="auth-form" hidden><label>Email<input id="registerEmail" type="email" autocomplete="email" required></label><label>Password<input id="registerPassword" type="password" autocomplete="new-password" minlength="10" required><small>Use at least 10 characters.</small></label><button class="primary" type="submit">Create account</button><button id="showLogin" class="auth-switch" type="button">Already registered? Sign in</button></form><p id="auth-message" class="auth-message" role="status" aria-live="polite"></p></div></section><div class="app" id="portal-app" hidden><aside class="sidebar"><div class="brand"><div class="logo">✦</div><div><b>BrightDesk</b><small>STUDENT PORTAL</small></div></div><div class="nav-label">WORKSPACE</div><button class="nav active" data-page="schedule">📅 <span>Schedule</span></button><button class="nav" data-page="attendance">👩‍🎓 <span>Students Present</span></button><button class="nav" data-page="routine">☀️ <span>Daily Routine</span></button><div class="sidebar-bottom"><div class="mini"><span>✨</span><div><b>Stay organized!</b><small>Make today count.</small></div></div></div></aside><main><header><div><small class="eyebrow">YOUR STUDY SPACE</small><h1 id="heading">Schedule</h1></div><div class="header-actions"><div class="date-pill">🗓️ <span id="today"></span></div><button id="logoutButton" class="logout-button" type="button">Log out</button></div></header><p id="save-message" class="save-message" role="status" aria-live="polite"></p>
-<section id="schedule" class="page active"><div class="welcome"><div><p>Build your weekly timetable in a few clicks.</p></div><div class="welcome-icon">🗓️</div></div><div class="panel"><h3>Add a class</h3><form id="scheduleForm" class="form-grid"><label>Subject<input id="subject" placeholder="e.g. Python Programming" required></label><label>Day<select id="day"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></label><label>Start time<input id="start" type="time" required></label><label>End time<input id="end" type="time" required></label><button class="primary" type="submit">＋ Add to schedule</button></form></div><div class="panel"><div class="panel-head"><h3>My timetable</h3><span class="tag" id="classCount">0 classes</span></div><div id="scheduleList" class="schedule-list"></div></div></section>
-<section id="attendance" class="page"><div class="welcome purple"><div><p>Track attendance for your class and add new students.</p></div><div class="welcome-icon">🎓</div></div><div class="stats"><div class="stat"><small>TOTAL STUDENTS</small><b id="totalStudents">100</b><span>👥 Class strength</span></div><div class="stat"><small>PRESENT</small><b id="presentStat">0</b><span>🟢 Today's present</span></div><div class="stat"><small>ABSENT</small><b id="absentStat">100</b><span>🔴 Today's absent</span></div><div class="stat"><small>ATTENDANCE</small><b id="percentStat">0%</b><span>📊 Today's rate</span></div></div><div class="panel"><h3>Add a student</h3><form id="studentForm" class="form-grid"><label>Roll number<input id="studentRoll" type="number" min="1" placeholder="e.g. 101" required></label><label>Student name<input id="studentName" placeholder="e.g. Arjun Kumar" required></label><button class="primary" type="submit">＋ Add student</button></form></div><div class="panel"><div class="panel-head"><h3>Student register</h3><div class="register-actions"><label class="student-search"><span>🔍</span><input id="studentSearch" type="search" placeholder="Search roll no. or name" autocomplete="off"></label><button id="allPresent" class="soft">✓ Mark all present</button><button id="resetAttendance" class="soft">↻ Reset</button></div></div><div class="table-wrap"><table><thead><tr><th>Roll No.</th><th>Student name</th><th>Status</th><th>Action</th></tr></thead><tbody id="studentRows"></tbody></table></div></div></section>
-<section id="routine" class="page"><div class="welcome orange"><div><h2>Make today count </h2><p>Keep your tasks small and your progress big.</p></div><div class="welcome-icon">✨</div></div><div class="panel"><h3>Add an activity</h3><form id="routineForm" class="form-grid"><label>Activity<input id="activity" placeholder="e.g. Revise DBMS" required></label><label>Time<input id="routineTime" type="time" required></label><label class="full">Notes (optional)<input id="notes" placeholder="Any small details..."></label><button class="primary" type="submit">＋ Add activity</button></form></div><div class="panel"><div class="panel-head"><h3>Today's routine</h3><span class="tag" id="routineCount">0 tasks</span></div><div id="routineList" class="routine-list"></div></div></section>
-</main></div><script src="script.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrightDesk Student Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <aside class="auth-hero">
+        <div class="auth-brand"><div class="logo">✦</div><div><b>BrightDesk</b><small>STUDENT PORTAL</small></div></div>
+        <div class="hero-copy"><span class="hero-kicker">STAY FOCUSED</span><h2>Your school life,<br>all in one place.</h2><p>Manage students, teachers, attendance and school events.</p></div>
+        <div class="hero-orbit" aria-hidden="true"><span class="orbit-card orbit-calendar">24<small>Today</small></span><span class="orbit-card orbit-chart"><i></i><i></i><i></i></span><span class="orbit-check">✓</span></div>
+      </aside>
+      <div class="auth-panel">
+        <p class="eyebrow">WELCOME TO BRIGHTDESK</p>
+        <h1 id="auth-title">Welcome back</h1>
+        <p id="auth-description" class="auth-description">Sign in to continue to your portal.</p>
+        <form id="loginForm" class="auth-form">
+          <label>Username<input id="loginUsername" type="text" autocomplete="username" minlength="3" maxlength="64" pattern="[A-Za-z0-9._\-]+" placeholder="Enter your username" required></label>
+          <label>Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required></label>
+          <button class="primary auth-submit" type="submit"><span>Sign in</span><b aria-hidden="true">→</b></button>
+          <button id="showRegister" class="auth-switch" type="button">New here? <strong>Create an account</strong></button>
+        </form>
+        <form id="registerForm" class="auth-form" hidden>
+          <label>Username<input id="registerUsername" type="text" autocomplete="username" minlength="3" maxlength="64" pattern="[A-Za-z0-9._\-]+" placeholder="Choose a username" required></label>
+          <label>Password<input id="registerPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="At least 10 characters" required><small>Use at least 10 characters.</small></label>
+          <button class="primary auth-submit" type="submit"><span>Create account</span><b aria-hidden="true">→</b></button>
+          <button id="showLogin" class="auth-switch" type="button">Already registered? <strong>Sign in</strong></button>
+        </form>
+        <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="app" id="portal-app" hidden>
+    <aside class="sidebar">
+      <div class="profile"><div class="avatar">BD</div><b id="profileName">BrightDesk</b><small>School Portal</small></div>
+      <div class="nav-label">MAIN MENU</div>
+      <nav aria-label="Main menu">
+        <button class="nav active" data-page="home"><span class="nav-icon">⌂</span><span>Home Page</span></button>
+        <button class="nav" data-page="students"><span class="nav-icon">♟</span><span>Students</span></button>
+        <button class="nav" data-page="teachers"><span class="nav-icon">♙</span><span>Teachers</span></button>
+        <button class="nav" data-page="events"><span class="nav-icon">▦</span><span>Events</span></button>
+      </nav>
+    </aside>
+
+    <main>
+      <header>
+        <div><p class="eyebrow">BRIGHTDESK STUDENT PORTAL</p><h1 id="heading">Home Page</h1></div>
+        <div class="header-actions"><span class="date-pill" id="headerDate"></span><button id="logoutButton" class="logout-button" type="button">Log out</button></div>
+      </header>
+      <p id="save-message" class="save-message" role="status" aria-live="polite"></p>
+
+      <section id="home" class="page active">
+        <div class="welcome dashboard-welcome"><div><h2>Welcome to your school dashboard</h2><p>Keep students, teachers and school events organized.</p></div><div class="welcome-icon">✦</div></div>
+        <div class="summary-grid">
+          <article class="kpi-card"><div><strong id="dashboardStudentCount">0</strong><small>Total Students</small></div><div class="kpi-icon students">♟</div></article>
+          <article class="kpi-card"><div><strong id="dashboardTeacherCount">0</strong><small>Total Teachers</small></div><div class="kpi-icon teachers">♙</div></article>
+          <article class="kpi-card"><div><strong id="dashboardEventCount">0</strong><small>Upcoming Events</small></div><div class="kpi-icon events">▦</div></article>
+          <article class="kpi-card"><div><strong id="dashboardAttendance">0%</strong><small>Today's Attendance</small></div><div class="kpi-icon attendance-icon">✓</div></article>
+        </div>
+        <div class="home-grid">
+          <section class="panel calendar-panel">
+            <div class="panel-head"><div><h3>Calendar</h3><p class="panel-subtitle">Choose a date to see its events.</p></div><div class="month-controls"><button id="calendarPrev" type="button" aria-label="Previous month">‹</button><button id="calendarNext" type="button" aria-label="Next month">›</button></div></div>
+            <div class="calendar-nav"><b id="calendarMonth"></b></div>
+            <div id="calendarGrid" class="calendar" aria-label="Calendar"></div>
+            <div class="selected-events"><h4 id="selectedDateLabel"></h4><div id="selectedDateEvents"></div></div>
+          </section>
+          <section class="panel upcoming-panel"><div class="panel-head"><div><h3>Upcoming Events</h3><p class="panel-subtitle">Your next school activities.</p></div><button class="soft" type="button" data-open-page="events">View all</button></div><div id="upcomingEvents" class="event-list"></div></section>
+        </div>
+      </section>
+
+      <section id="students" class="page">
+        <div class="welcome purple"><div><h2>Students</h2><p>Manage the student register and track attendance.</p></div><div class="welcome-icon">🎓</div></div>
+        <div class="stats">
+          <div class="stat"><small>TOTAL STUDENTS</small><b id="totalStudents">0</b><span>👥 Class strength</span></div>
+          <div class="stat"><small>PRESENT</small><b id="presentStat">0</b><span>🟢 Marked present</span></div>
+          <div class="stat"><small>ABSENT</small><b id="absentStat">0</b><span>🔴 Not marked present</span></div>
+          <div class="stat"><small>ATTENDANCE</small><b id="percentStat">0%</b><span>📊 Today's rate</span></div>
+        </div>
+        <div class="panel"><h3>Add a student</h3><form id="studentForm" class="form-grid"><label>Roll number<input id="studentRoll" type="number" min="1" placeholder="e.g. 101" required></label><label>Student name<input id="studentName" maxlength="100" placeholder="e.g. Arjun Kumar" required></label><button class="primary" type="submit">＋ Add student</button></form></div>
+        <div class="panel"><div class="panel-head"><h3>Student register</h3><div class="register-actions"><label class="student-search"><span>🔍</span><input id="studentSearch" type="search" placeholder="Search roll no. or name" autocomplete="off"></label><button id="allPresent" class="soft" type="button">✓ Mark all present</button><button id="resetAttendance" class="soft" type="button">↻ Reset attendance</button></div></div><div class="table-wrap"><table><thead><tr><th>Roll No.</th><th>Student name</th><th>Status</th><th>Action</th></tr></thead><tbody id="studentRows"></tbody></table></div></div>
+      </section>
+
+      <section id="teachers" class="page">
+        <div class="welcome orange"><div><h2>Teachers</h2><p>Add and maintain your school's teacher directory.</p></div><div class="welcome-icon">👩‍🏫</div></div>
+        <div class="panel"><h3>Add a teacher</h3><form id="teacherForm" class="form-grid"><label>Teacher name<input id="teacherName" maxlength="100" placeholder="e.g. Meena Kumar" required></label><label>Subject or role<input id="teacherSubject" maxlength="100" placeholder="e.g. Mathematics" required></label><label>Email (optional)<input id="teacherEmail" type="email" maxlength="254" placeholder="teacher@school.com"></label><button class="primary" type="submit">＋ Add teacher</button></form></div>
+        <div class="panel"><div class="panel-head"><h3>Teacher directory</h3><span class="tag" id="teacherCount">0 teachers</span></div><div class="table-wrap"><table><thead><tr><th>Teacher</th><th>Subject / Role</th><th>Email</th><th>Action</th></tr></thead><tbody id="teacherRows"></tbody></table></div></div>
+      </section>
+
+      <section id="events" class="page">
+        <div class="welcome"><div><h2>Events</h2><p>Plan school activities and see them on the calendar.</p></div><div class="welcome-icon">🗓️</div></div>
+        <div class="panel"><h3>Add an event</h3><form id="eventForm" class="form-grid"><label>Event name<input id="eventTitle" maxlength="120" placeholder="e.g. Science fair" required></label><label>Date<input id="eventDate" type="date" required></label><label>Time<input id="eventTime" type="time" required></label><label>For / audience<input id="eventAudience" maxlength="100" placeholder="e.g. All students"></label><label class="full">Details (optional)<input id="eventDescription" maxlength="300" placeholder="Add event details"></label><button class="primary" type="submit">＋ Add event</button></form></div>
+        <div class="panel"><div class="panel-head"><h3>School events</h3><span class="tag" id="eventCount">0 events</span></div><div id="eventsList" class="event-list"></div></div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

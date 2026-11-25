@@ -1,15 +1,33 @@
 # BrightDesk Student Portal
 
+## Requirements
+
+- Node.js 18 or newer
+- MySQL 8.0 or newer, running locally or on a trusted network
+
+## Configure MySQL
+
+Create a database and an application user with access only to that database. For example, run the following in a MySQL administrative session, replacing the sample password with a strong private value:
+
+```sql
+CREATE DATABASE brightdesk_portal CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER 'brightdesk_app'@'127.0.0.1' IDENTIFIED BY 'replace-with-a-private-password';
+GRANT SELECT, INSERT, UPDATE, CREATE ON brightdesk_portal.* TO 'brightdesk_app'@'127.0.0.1';
+```
+
+Copy `.env.example` to `.env` and set `DB_USER`, `DB_PASSWORD`, and `DB_NAME`. Keep `.env` private; it is excluded from Git. `DB_HOST` and `DB_PORT` default to `127.0.0.1` and `3306`.
+
 ## Run locally
 
-Install Node.js 18 or newer, then run these commands from this folder:
+Install the Node.js dependencies and start the portal:
 
 ```powershell
+npm install
 npm start
 ```
 
-Open <http://127.0.0.1:3000>. Create an account on the sign-in screen; passwords must be at least 10 characters. To use another port, set the `PORT` environment variable before starting the server.
+Open <http://127.0.0.1:3000>. Create an account on the sign-in screen; usernames must be 3–64 letters, numbers, dots, underscores, or hyphens, and passwords must be 10–128 characters. To use another port, set the `PORT` environment variable before starting the server.
 
-Accounts and each account's portal data are stored in `.portal-data\users.json`. On the first account registration in a browser, any existing browser-saved timetable, attendance, routine, and student names are imported into that account. Keep the data file private and include it in your backup plan. Sessions expire after seven days and are cleared when the server restarts.
+The server creates the `portal_users` table on startup. If `.portal-data\users.json` exists, its valid accounts and portal data are imported into MySQL without replacing existing database accounts. Keep the legacy file private until you have verified the migration and backed up your database. Sessions expire after seven days and are cleared when the server restarts.
 
-For a public deployment, use HTTPS and set `NODE_ENV=production` so session cookies are marked secure. The JSON file store is intended for a small local/student project, not a multi-process production deployment.
+For a public deployment, use HTTPS and set `NODE_ENV=production` so session cookies are marked secure. Use a dedicated, least-privilege database user and keep database credentials out of source control.

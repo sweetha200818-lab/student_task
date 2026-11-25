@@ -5,5 +5,9 @@
   "description": "BrightDesk student portal with a small built-in Node.js backend",
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "mysql2": "^3.24.6"
   }
 }
