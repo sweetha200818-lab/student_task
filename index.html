@@ -18,17 +18,33 @@
         <p class="eyebrow">WELCOME TO BRIGHTDESK</p>
         <h1 id="auth-title">Welcome back</h1>
         <p id="auth-description" class="auth-description">Sign in to continue to your portal.</p>
-        <form id="loginForm" class="auth-form">
-          <label>Username<input id="loginUsername" type="text" autocomplete="username" minlength="3" maxlength="64" pattern="[A-Za-z0-9._\-]+" placeholder="Enter your username" required></label>
+        <div id="authRoleChoice" class="auth-role-choice">
+          <button id="chooseStudentLogin" type="button"><span>🎓</span><b>Student login</b><small>Use your student username and password</small></button>
+          <button id="chooseTeacherLogin" type="button"><span>👩‍🏫</span><b>Teacher login</b><small>Use your teacher username and password</small></button>
+        </div>
+        <form id="loginForm" class="auth-form" hidden>
+          <input id="loginRole" type="hidden" value="student">
+          <label><span id="loginUsernameLabel">Student username (roll number)</span><input id="loginUsername" type="text" autocomplete="username" minlength="1" maxlength="64" placeholder="e.g. 100" required></label>
           <label>Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required></label>
           <button class="primary auth-submit" type="submit"><span>Sign in</span><b aria-hidden="true">→</b></button>
-          <button id="showRegister" class="auth-switch" type="button">New here? <strong>Create an account</strong></button>
+          <button id="showRegister" class="auth-switch" type="button">New here? <strong>Create student account</strong></button>
         </form>
         <form id="registerForm" class="auth-form" hidden>
-          <label>Username<input id="registerUsername" type="text" autocomplete="username" minlength="3" maxlength="64" pattern="[A-Za-z0-9._\-]+" placeholder="Choose a username" required></label>
-          <label>Password<input id="registerPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="At least 10 characters" required><small>Use at least 10 characters.</small></label>
+          <label>Full name<input id="registerDisplayName" type="text" maxlength="100" placeholder="Your name" required></label>
+          <label>Roll number<input id="registerRollNumber" type="number" min="1" step="1" placeholder="e.g. 101" required></label>
+          <label>Email<input id="registerEmail" type="email" autocomplete="email" maxlength="254" placeholder="you@school.com" required></label>
+          <label>Password<input id="registerPassword" type="password" autocomplete="new-password" minlength="1" maxlength="128" placeholder="Create a password" required></label>
           <button class="primary auth-submit" type="submit"><span>Create account</span><b aria-hidden="true">→</b></button>
           <button id="showLogin" class="auth-switch" type="button">Already registered? <strong>Sign in</strong></button>
+        </form>
+        <form id="teacherRegisterForm" class="auth-form" hidden>
+          <label>Full name<input id="teacherRegisterName" type="text" maxlength="100" placeholder="Your name" required></label>
+          <label>Teacher username<input id="teacherRegisterUsername" type="text" autocomplete="username" minlength="3" maxlength="64" pattern="[A-Za-z0-9._-]{3,64}" placeholder="e.g. meena.k" required></label>
+          <label>Email (optional)<input id="teacherRegisterEmail" type="email" autocomplete="email" maxlength="254" placeholder="you@school.com"></label>
+          <label>Password<input id="teacherRegisterPassword" type="password" autocomplete="new-password" minlength="1" maxlength="128" placeholder="Create a password" required></label>
+          <label>Subject / role (optional)<input id="teacherRegisterSubject" type="text" maxlength="100" placeholder="e.g. Mathematics"></label>
+          <button class="primary auth-submit" type="submit"><span>Create teacher account</span><b aria-hidden="true">→</b></button>
+          <button id="teacherRegisterBack" class="auth-switch" type="button">Already registered? <strong>Teacher sign in</strong></button>
         </form>
         <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
       </div>
@@ -41,27 +57,45 @@
       <div class="nav-label">MAIN MENU</div>
       <nav aria-label="Main menu">
         <button class="nav active" data-page="home"><span class="nav-icon">⌂</span><span>Home Page</span></button>
-        <button class="nav" data-page="students"><span class="nav-icon">♟</span><span>Students</span></button>
-        <button class="nav" data-page="teachers"><span class="nav-icon">♙</span><span>Teachers</span></button>
+        <button class="nav role-teacher-only" data-page="students"><span class="nav-icon">♟</span><span>Students</span></button>
+        <button class="nav" data-page="attendance"><span class="nav-icon">✓</span><span>Attendance</span></button>
+        <button class="nav" data-page="assignments"><span class="nav-icon">▤</span><span>Assignments</span></button>
+        <button class="nav role-teacher-only" data-page="teachers"><span class="nav-icon">♙</span><span>Teachers</span></button>
         <button class="nav" data-page="events"><span class="nav-icon">▦</span><span>Events</span></button>
+        <button class="nav" data-page="account"><span class="nav-icon">⚙</span><span>My Account</span></button>
       </nav>
     </aside>
 
     <main>
       <header>
         <div><p class="eyebrow">BRIGHTDESK STUDENT PORTAL</p><h1 id="heading">Home Page</h1></div>
-        <div class="header-actions"><span class="date-pill" id="headerDate"></span><button id="logoutButton" class="logout-button" type="button">Log out</button></div>
+        <div class="header-actions"><button id="eventNotificationButton" class="logout-button" type="button" hidden>Events: 0</button><span class="date-pill" id="headerDate"></span><button id="logoutButton" class="logout-button" type="button">Log out</button></div>
       </header>
       <p id="save-message" class="save-message" role="status" aria-live="polite"></p>
 
       <section id="home" class="page active">
-        <div class="welcome dashboard-welcome"><div><h2>Welcome to your school dashboard</h2><p>Keep students, teachers and school events organized.</p></div><div class="welcome-icon">✦</div></div>
-        <div class="summary-grid">
-          <article class="kpi-card"><div><strong id="dashboardStudentCount">0</strong><small>Total Students</small></div><div class="kpi-icon students">♟</div></article>
-          <article class="kpi-card"><div><strong id="dashboardTeacherCount">0</strong><small>Total Teachers</small></div><div class="kpi-icon teachers">♙</div></article>
-          <article class="kpi-card"><div><strong id="dashboardEventCount">0</strong><small>Upcoming Events</small></div><div class="kpi-icon events">▦</div></article>
-          <article class="kpi-card"><div><strong id="dashboardAttendance">0%</strong><small>Today's Attendance</small></div><div class="kpi-icon attendance-icon">✓</div></article>
+        <div class="welcome dashboard-welcome">
+          <div>
+            <span class="welcome-kicker">TODAY'S WORKSPACE</span>
+            <h2>Welcome to your school dashboard</h2>
+            <p>Keep students, teachers and school events organized.</p>
+            <button class="welcome-action" type="button" data-open-page="students">Open student register <b>→</b></button>
+          </div>
+          <div class="welcome-icon">✦</div>
         </div>
+        <div class="summary-grid">
+          <button class="kpi-card kpi-action role-teacher-only" type="button" data-open-page="students" aria-label="View the student register">
+            <div><strong id="dashboardStudentCount">0</strong><small>Total Students · View register</small></div><div class="kpi-icon students">♟</div>
+          </button>
+          <article class="kpi-card role-teacher-only"><div><strong id="dashboardTeacherCount">0</strong><small>Total Teachers</small></div><div class="kpi-icon teachers">♙</div></article>
+          <article class="kpi-card"><div><strong id="dashboardEventCount">0</strong><small>Upcoming Events</small></div><div class="kpi-icon events">▦</div></article>
+          <article class="kpi-card role-teacher-only"><div><strong id="dashboardAttendance">0%</strong><small>Today's Attendance</small></div><div class="kpi-icon attendance-icon">✓</div></article>
+        </div>
+        <section class="quick-actions role-teacher-only" aria-label="Quick actions">
+          <button type="button" data-open-page="students"><span class="quick-icon blue">♟</span><span><b>Add or manage students</b><small>Register and attendance</small></span><i>→</i></button>
+          <button type="button" data-open-page="teachers"><span class="quick-icon pink">♙</span><span><b>Teacher directory</b><small>Add staff and subjects</small></span><i>→</i></button>
+          <button type="button" data-open-page="events"><span class="quick-icon gold">▦</span><span><b>Create a school event</b><small>Plan the next activity</small></span><i>→</i></button>
+        </section>
         <div class="home-grid">
           <section class="panel calendar-panel">
             <div class="panel-head"><div><h3>Calendar</h3><p class="panel-subtitle">Choose a date to see its events.</p></div><div class="month-controls"><button id="calendarPrev" type="button" aria-label="Previous month">‹</button><button id="calendarNext" type="button" aria-label="Next month">›</button></div></div>
@@ -71,18 +105,85 @@
           </section>
           <section class="panel upcoming-panel"><div class="panel-head"><div><h3>Upcoming Events</h3><p class="panel-subtitle">Your next school activities.</p></div><button class="soft" type="button" data-open-page="events">View all</button></div><div id="upcomingEvents" class="event-list"></div></section>
         </div>
+        <div class="insights-grid">
+          <section class="panel attendance-overview role-teacher-only">
+            <div class="panel-head"><div><h3>Today's attendance</h3><p class="panel-subtitle">Live class summary</p></div><button class="soft" type="button" data-open-page="students">Manage</button></div>
+            <div class="attendance-overview-body">
+              <div class="attendance-ring"><div><strong id="attendanceRingValue">0%</strong><span>Present</span></div></div>
+              <div class="attendance-breakdown">
+                <div><span class="breakdown-dot present"></span><p><small>Present</small><b id="attendancePresentCount">0</b></p></div>
+                <div><span class="breakdown-dot absent"></span><p><small>Absent</small><b id="attendanceAbsentCount">0</b></p></div>
+                <div><span class="breakdown-dot unmarked"></span><p><small>Not marked</small><b id="attendanceUnmarkedCount">0</b></p></div>
+                <div><span class="breakdown-dot total"></span><p><small>Total</small><b id="attendanceTotalCount">0</b></p></div>
+              </div>
+            </div>
+          </section>
+          <section class="panel school-overview role-teacher-only">
+            <div class="panel-head"><div><h3>School overview</h3><p class="panel-subtitle">A quick summary of your portal</p></div></div>
+            <div class="overview-rows">
+              <div><span class="overview-icon">●</span><p><small>Student register</small><b id="overviewStudents">0 students</b></p><i class="overview-state ready">Active</i></div>
+              <div><span class="overview-icon">●</span><p><small>Teaching staff</small><b id="overviewTeachers">0 teachers</b></p><i class="overview-state">Directory</i></div>
+              <div><span class="overview-icon">●</span><p><small>Scheduled activities</small><b id="overviewEvents">0 events</b></p><i class="overview-state">Calendar</i></div>
+            </div>
+          </section>
+        </div>
       </section>
 
       <section id="students" class="page">
         <div class="welcome purple"><div><h2>Students</h2><p>Manage the student register and track attendance.</p></div><div class="welcome-icon">🎓</div></div>
-        <div class="stats">
-          <div class="stat"><small>TOTAL STUDENTS</small><b id="totalStudents">0</b><span>👥 Class strength</span></div>
-          <div class="stat"><small>PRESENT</small><b id="presentStat">0</b><span>🟢 Marked present</span></div>
-          <div class="stat"><small>ABSENT</small><b id="absentStat">0</b><span>🔴 Not marked present</span></div>
-          <div class="stat"><small>ATTENDANCE</small><b id="percentStat">0%</b><span>📊 Today's rate</span></div>
+        <div class="panel attendance-date-panel">
+          <label for="attendanceDate">Attendance date<input id="attendanceDate" type="date"></label>
+          <p>Attendance is saved separately for each date.</p>
         </div>
-        <div class="panel"><h3>Add a student</h3><form id="studentForm" class="form-grid"><label>Roll number<input id="studentRoll" type="number" min="1" placeholder="e.g. 101" required></label><label>Student name<input id="studentName" maxlength="100" placeholder="e.g. Arjun Kumar" required></label><button class="primary" type="submit">＋ Add student</button></form></div>
-        <div class="panel"><div class="panel-head"><h3>Student register</h3><div class="register-actions"><label class="student-search"><span>🔍</span><input id="studentSearch" type="search" placeholder="Search roll no. or name" autocomplete="off"></label><button id="allPresent" class="soft" type="button">✓ Mark all present</button><button id="resetAttendance" class="soft" type="button">↻ Reset attendance</button></div></div><div class="table-wrap"><table><thead><tr><th>Roll No.</th><th>Student name</th><th>Status</th><th>Action</th></tr></thead><tbody id="studentRows"></tbody></table></div></div>
+        <div class="stats">
+          <button id="totalStudentsCard" class="stat stat-action" type="button" aria-controls="studentRegister">
+            <small>TOTAL STUDENTS</small><b id="totalStudents">0</b><span>👥 Click to view register</span>
+          </button>
+          <div class="stat"><small>PRESENT</small><b id="presentStat">0</b><span>🟢 Marked present</span></div>
+          <div class="stat"><small>ABSENT</small><b id="absentStat">0</b><span>🔴 Marked absent</span></div>
+          <div class="stat"><small>NOT MARKED</small><b id="unmarkedStat">0</b><span>⏳ Awaiting attendance</span></div>
+          <div class="stat"><small>ATTENDANCE</small><b id="percentStat">0%</b><span id="attendanceDateSummary">📊 Today's rate</span></div>
+        </div>
+        <div class="panel"><h3>Add a student</h3><form id="studentForm" class="form-grid"><label>Roll number (automatic)<input id="studentRoll" type="number" min="1" readonly required><small class="form-hint">Assigned automatically to avoid duplicate roll numbers.</small></label><label>Student name<input id="studentName" maxlength="100" placeholder="e.g. Arjun Kumar" required></label><button class="primary" type="submit">＋ Add student</button></form></div>
+        <div class="panel role-teacher-only" hidden>
+          <div class="panel-head"><h3>Create a login account</h3><span class="tag">Teacher tool</span></div>
+          <form id="studentAccountForm" class="form-grid">
+            <label>Account type<select id="accountRole"><option value="student">Student</option><option value="teacher">Teacher</option></select></label>
+            <label><span id="accountUsernameLabel">Teacher login username</span><input id="accountUsername" type="text" autocomplete="username" pattern="[A-Za-z0-9._-]{3,64}" minlength="3" maxlength="64" placeholder="e.g. meena.k"></label>
+            <label>Full name<input id="accountDisplayName" maxlength="100" required></label>
+            <label>Email address<input id="accountEmail" type="email" maxlength="254" placeholder="student@school.com" required></label>
+            <label id="accountRollField">Roll number<input id="accountRollNumber" type="number" min="1" step="1" required></label>
+            <label id="accountSubjectField" hidden>Subject / role<input id="accountSubject" maxlength="100" placeholder="e.g. English"></label>
+            <label>Temporary password<input id="accountPassword" type="password" minlength="10" maxlength="128" required></label>
+            <button class="primary" type="submit">Create account</button>
+          </form>
+        </div>
+        <div id="studentRegister" class="panel"><div class="panel-head"><h3>Student register</h3><div class="register-actions"><label class="student-search"><span>🔍</span><input id="studentSearch" type="search" placeholder="Search roll no. or name" autocomplete="off"></label><button id="allPresent" class="soft" type="button">✓ Mark all present</button><button id="resetAttendance" class="soft" type="button">↻ Reset attendance</button></div></div><div class="table-wrap"><table><thead><tr><th>Roll No.</th><th>Student name</th><th>Status</th><th>Action</th></tr></thead><tbody id="studentRows"></tbody></table></div></div>
+      </section>
+
+      <section id="attendance" class="page">
+        <div id="teacherAttendanceView" class="role-teacher-only" hidden>
+          <div class="welcome purple"><div><h2>Attendance overview</h2><p>Review daily attendance and open the register to mark students present.</p></div><div class="welcome-icon">✓</div></div>
+          <div class="panel attendance-date-panel">
+            <label for="attendanceReportDate">Report date<input id="attendanceReportDate" type="date"></label>
+            <p>Attendance is saved separately for each date.</p>
+          </div>
+          <div class="stats">
+            <div class="stat"><small>TOTAL STUDENTS</small><b id="attendanceReportTotal">0</b><span>👥 Class strength</span></div>
+            <div class="stat"><small>PRESENT</small><b id="attendanceReportPresent">0</b><span>🟢 Marked present</span></div>
+            <div class="stat"><small>ABSENT</small><b id="attendanceReportAbsent">0</b><span>🔴 Marked absent</span></div>
+            <div class="stat"><small>NOT MARKED</small><b id="attendanceReportUnmarked">0</b><span>⏳ Attendance pending</span></div>
+            <div class="stat"><small>ATTENDANCE</small><b id="attendanceReportRate">0%</b><span>📊 Selected date rate</span></div>
+          </div>
+          <div class="panel"><h3 id="attendanceReportHint">Daily attendance</h3><p class="panel-subtitle">Use the student register to mark or update attendance for this date.</p><button class="primary" type="button" data-open-page="students">Open student register →</button></div>
+        </div>
+        <div id="studentAttendanceView" hidden>
+          <div class="welcome purple"><div><h2>My attendance</h2><p>Only attendance records for your student account are shown here.</p></div><div class="welcome-icon">✓</div></div>
+          <div class="stats">
+            <div class="stat"><small>TODAY'S STATUS</small><b id="studentAttendanceStatus">—</b><span>Present / Absent / Not marked</span></div>
+          </div>
+          <div class="panel"><div class="panel-head"><h3>Daily records</h3></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Status</th></tr></thead><tbody id="studentAttendanceRows"></tbody></table></div></div>
+        </div>
       </section>
 
       <section id="teachers" class="page">
@@ -93,8 +194,46 @@
 
       <section id="events" class="page">
         <div class="welcome"><div><h2>Events</h2><p>Plan school activities and see them on the calendar.</p></div><div class="welcome-icon">🗓️</div></div>
-        <div class="panel"><h3>Add an event</h3><form id="eventForm" class="form-grid"><label>Event name<input id="eventTitle" maxlength="120" placeholder="e.g. Science fair" required></label><label>Date<input id="eventDate" type="date" required></label><label>Time<input id="eventTime" type="time" required></label><label>For / audience<input id="eventAudience" maxlength="100" placeholder="e.g. All students"></label><label class="full">Details (optional)<input id="eventDescription" maxlength="300" placeholder="Add event details"></label><button class="primary" type="submit">＋ Add event</button></form></div>
+        <div class="panel role-teacher-only" id="eventCreatePanel"><h3>Add an event</h3><form id="eventForm" class="form-grid"><label>Event name<input id="eventTitle" maxlength="120" placeholder="e.g. Science fair" required></label><label>Date<input id="eventDate" type="date" required></label><label>Time<input id="eventTime" type="time" required></label><label>For / audience<input id="eventAudience" maxlength="100" placeholder="e.g. All students"></label><label class="full">Details (optional)<input id="eventDescription" maxlength="300" placeholder="Add event details"></label><label class="full">Students
+          <select id="eventRecipients" multiple size="6"></select>
+          <small class="form-hint">Select which roll numbers receive this event. Hold Ctrl or Command for multiple students.</small>
+        </label><button class="primary" type="submit">＋ Add event</button></form></div>
         <div class="panel"><div class="panel-head"><h3>School events</h3><span class="tag" id="eventCount">0 events</span></div><div id="eventsList" class="event-list"></div></div>
+      </section>
+
+      <section id="assignments" class="page">
+        <div class="welcome purple"><div><h2>Assignments</h2><p>View deadlines and track assignment submissions.</p></div><div class="welcome-icon">▤</div></div>
+        <div class="panel role-teacher-only" id="assignmentCreatePanel">
+          <h3>Create an assignment</h3>
+          <form id="assignmentForm" class="form-grid">
+            <label>Title<input id="assignmentTitle" maxlength="160" required></label>
+            <label>Subject<input id="assignmentSubject" maxlength="100"></label>
+            <label>Due date<input id="assignmentDueDate" type="date"></label>
+            <label>Due time<input id="assignmentDueTime" type="time"></label>
+            <label class="full">Instructions<textarea id="assignmentDetails" maxlength="1000" rows="3"></textarea></label>
+            <label class="full">Students
+              <select id="assignmentRecipients" multiple size="6"></select>
+              <small class="form-hint">Hold Ctrl or Command to select more than one student.</small>
+            </label>
+            <button class="primary" type="submit">Assign work</button>
+          </form>
+        </div>
+        <div class="panel"><div class="panel-head"><h3 id="assignmentListTitle">Assignment list</h3><span class="tag" id="assignmentCount">0 assignments</span></div><div id="assignmentRows" class="event-list"></div></div>
+      </section>
+
+      <section id="account" class="page">
+        <div class="welcome purple"><div><h2>Account settings</h2><p>Update your login details. New credentials are securely saved.</p></div><div class="welcome-icon">🔐</div></div>
+        <div class="panel account-panel">
+          <div class="account-identity"><span class="account-avatar">BD</span><div><b id="accountName">BrightDesk</b><small id="accountRoleLabel">Student account</small></div></div>
+          <form id="accountUpdateForm" class="form-grid">
+            <label>Current login ID<input id="accountCurrentUsername" readonly></label>
+            <label><span id="accountNewUsernameLabel">New phone number (optional)</span><input id="accountNewUsername" type="text" autocomplete="username" pattern="[+][1-9][0-9]{7,14}" minlength="9" maxlength="64" placeholder="Leave blank to keep current"></label>
+            <label>Email address<input id="accountEmailAddress" type="email" maxlength="254" placeholder="you@school.com"></label>
+            <label>Current password<input id="accountCurrentPassword" type="password" autocomplete="current-password" required></label>
+            <label>New password (optional)<input id="accountNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="At least 10 characters"></label>
+            <button class="primary" type="submit">Save login changes</button>
+          </form>
+        </div>
       </section>
     </main>
   </div>

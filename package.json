@@ -4,10 +4,12 @@
   "private": true,
   "description": "BrightDesk student portal with a small built-in Node.js backend",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "dotenv": "^18.0.10",
-    "mysql2": "^3.24.6"
+    "mysql2": "^3.24.6",
+    "nodemailer": "^10.6.1"
   }
 }
